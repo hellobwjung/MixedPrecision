@@ -49,7 +49,7 @@ def get_index(cfa_pattern=2, crop_size=128):
 
 
 def get_file_list(dataset_path = 'N:/dataset/MIT/imgs/images_sub10/valtest'):
-    # dataset_path = 'N:/dataset/MIT/imgs/images_sub10/valtest'
+    dataset_path = '/home/dataset/MIT/imgs/images_sub10/valtest'
     files = glob.glob(os.path.join(dataset_path, '**', '*.png'), recursive=True)
     files.sort()
     # for idx, f in enumerate(files):
@@ -101,12 +101,12 @@ def get_structure(data_path, model_name, model_sig):
     bittage = 16 if '16' in model_sig else 32
     path = os.path.join(data_path, f'*{model_name}*{model_sig}*.h5')
     h5s = glob.glob(path)
-    # if len(h5s)<1:
-    #     print('no structure files, h5s=', h5s)
-    #     print('path=', path)
-    #     exit()
-    #
-    # print(h5s, path)
+    if len(h5s)<1:
+        print('no structure files, h5s=', h5s)
+        print('path=', path)
+        exit()
+
+    print(h5s, path)
     h5 = h5s[0]
     # h5 = os.path.join(data_path,'MC_rmsc_model_structure.h5')
     print(h5s, h5, path)
@@ -150,6 +150,8 @@ def freeze(args):
     model_sig32 = '_32bit'
     model_sig16 = '_16bit_2_same_noise'
     model_sig32 = '_32bit_2_same_noise'
+    # model_sig16 = '_16bit_4_same_noise'
+    # model_sig32 = '_32bit_4_same_noise'
 
     structure16 = get_structure(data_path, model_name, model_sig32) # <--load 32, important!!!
     # structure32 = get_structure(data_path, model_name, model_sig32)
@@ -200,15 +202,6 @@ def inference_one_tflite(tfname, input_files, output_path='outputs'):
     output_details = interpreter.get_output_details()
 
 
-    for id in input_details:
-        print(id)
-
-    for od in output_details:
-        print(od)
-
-    # return
-
-
     idx_RGB = get_index()
 
     for idx, f in enumerate(input_files):
@@ -218,10 +211,9 @@ def inference_one_tflite(tfname, input_files, output_path='outputs'):
 
         # arr = get_image()
 
-
-
-        arr_input = (arr / 127.5) - 1
-        patternized = (arr_input * idx_RGB).astype(np.float32)
+        arr_input = (arr * idx_RGB).astype(np.float32) # [0, 255]
+        patternized = (arr_input / 127.5) - 1 # [0, 255] --> # [0, 2] --> # [-1, 1]
+        # patternized = (arr_input * idx_RGB).astype(np.float32)
         patternized = patternized[None,...]
         print(arr.shape, idx_RGB.shape, patternized.shape, patternized.dtype)
 
@@ -262,8 +254,8 @@ def inference_one_tflite(tfname, input_files, output_path='outputs'):
 
 
 
-        if idx>10:
-            return
+        # if idx>9:
+        #     return
 
 
 
@@ -301,8 +293,10 @@ def inference_h5(args):
 
     model_sig16 = '_16bit'
     model_sig32 = '_32bit'
-    # model_sig16 = '_16bit_2_same_noise'
-    # model_sig32 = '_32bit_2_same_noise'
+    model_sig16 = '_16bit_2_same_noise'
+    model_sig32 = '_32bit_2_same_noise'
+    model_sig16 = '_16bit_4_same_noise'
+    model_sig32 = '_32bit_4_same_noise'
 
     structure16 = get_structure(data_path, model_name, model_sig32)  # <--load 32, important!!!
     structure32 = get_structure(data_path, model_name, model_sig32)
@@ -317,8 +311,8 @@ def inference_h5(args):
     # model32 = structure32
     model16.set_weights(weights16)
 
-    opath16 = 'outputs/weights/MC_rmsc_16bit/00598_MC_rmsc_16bit_3.08692e+02.tflite'
-    opath32 = 'outputs/weights/MC_rmsc_32bit/00589_MC_rmsc_32bit_3.09384e+02.tflite'
+    opath16 = 'outputs/weights/MC_rmsc_16bit'
+    opath32 = 'outputs/weights/MC_rmsc_32bit'
     print(opath16)
     print(opath32)
     # exit()
@@ -332,39 +326,39 @@ def inference_h5(args):
     #     arr = get_image()
     for idx, f in enumerate(input_files):
         img = Image.open(f)
-        arr = np.asarray(img)
+        arr = np.asarray(img) # [0, 255]
 
         print('arr:  %d, %d' %(np.amin(arr), np.amax(arr)))
-        arr_input = (arr / 127.5) - 1
-        # arr_input = (arr / 255.) - 0.5
-        # arr_input = arr
+        patternized = (arr * idx_RGB).astype(np.float32)  # [0, 255]
+
+        arr_input = (patternized / 127.5) - 1  # [0, 255] --> [0, 2] --> [-1, 1]
+        arr_input = arr_input[None, ...]
 
         print('arr_input: %.2f, %.2f' %(np.amin(arr_input), np.amax(arr_input)))
-        patternized = (arr_input * idx_RGB).astype(np.float32)
 
-        # patternized = arr_input
-        patternized = patternized[None, ...]
+
+
 
         print(arr.shape, idx_RGB.shape, patternized.shape, patternized.dtype)
 
         name = os.path.join(opath16, "in%04d.png" % (idx))
         io.imsave(name, arr)
         name = os.path.join(opath16, "pat%04d.png" % (idx))
-        io.imsave(name, patternized[0])
+        io.imsave(name, patternized)
 
         name = os.path.join(opath32, "in%04d.png" % (idx))
         io.imsave(name, arr)
         name = os.path.join(opath32, "pat%04d.png" % (idx))
-        io.imsave(name, patternized[0])
+        io.imsave(name, patternized)
 
         # continue
 
 
         #inference
-        # output16 = model16.predict(patternized)
-        # output32 = model32.predict(patternized)
-        output16 = model16(patternized)
-        output32 = model32(patternized)
+        output16 = model16.predict(arr_input)
+        output32 = model32.predict(arr_input)
+        # output16 = model16(patternized)
+        # output32 = model32(patternized)
 
         print(arr.shape, idx_RGB.shape, patternized.shape, output16.shape, output32.shape)
 
@@ -395,15 +389,15 @@ def inference_h5(args):
         print(opath16)
         print(opath32)
 
-        return
-
+        if idx>9:
+            return
 
     print('done done')
 
 def main(args):
-    # tfnames = freeze(args)
-    # inference_tflite(args, tfnames)
-    inference_h5(args)
+    tfnames = freeze(args)
+    inference_tflite(args, tfnames)
+    # inference_h5(args)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
