@@ -4,6 +4,7 @@ import os
 import random
 import glob
 import tensorflow as tf
+tf.executing_eagerly()
 import numpy as np
 from functools import partial
 
