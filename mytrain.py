@@ -9,6 +9,8 @@ from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
 from myutils import *
 from mymodel import MyModel, save_as_tflite
+import tensorflow as tf
+tf.executing_eagerly()
 
 def get_available_gpus():
     local_device_protos = device_lib.list_local_devices()
@@ -62,6 +64,7 @@ def main(args):
 
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
+    # if True:
         utils = bwutils(input_type,
                         cfa_pattern='tetra',
                         patch_size=patch_size,
@@ -71,7 +74,7 @@ def main(args):
                         card_type='same_noise',
                         loss_type=loss_type,  # 'rgb', 'yuv', 'ploss'
                         loss_mode='2norm',
-                        loss_scale=1e4,
+                        loss_scale=5e4,
                         cache_enable=cache_enable)
 
 
@@ -183,6 +186,10 @@ def main(args):
                   loss=utils.loss_fn,  # 'mse',
                   metrics=[utils.loss_fn])
 
+    model.save('model_wo_bn.h5', include_optimizer=False)
+    # print('done done save')
+    # return
+
 
 
 
@@ -191,7 +198,8 @@ def main(args):
     model, prev_epoch, prev_loss = load_checkpoint_if_exists(model, model_dir, model_name, trained_model_file_name)
 
     ## callbacks for training loop
-    callbacks = get_training_callbacks(['ckeckpoint', 'tensorboard', 'image'],
+    # callbacks = get_training_callbacks(['ckeckpoint', 'tensorboard', 'image'],
+    callbacks=get_training_callbacks(['ckeckpoint', 'tensorboard'],
                                        base_path=base_path, model_name=model_name + model_sig,
                                        dataloader=dataset_viz, cnt_viz=cnt_viz, initial_value_threshold=prev_loss)
     # ## lr callback
@@ -259,7 +267,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--model_sig',
         type=str,
-        default='_16bit_test',
+        default='_16bit_5_same_noise',
         help='model postfix')
 
     parser.add_argument(
@@ -272,7 +280,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--test',
         type=bool,
-        default=True,
+        default=False,
         help='test')
 
     args = parser.parse_args()
