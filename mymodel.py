@@ -16,7 +16,7 @@ def save_as_tflite(model, name='model'):
 
 
 class MyModel():
-    def  __init__(self,
+    def __init__(self,
              model_name='bwunet',
              input_shape=(128, 128, 3),
              use_bn=True,
@@ -56,7 +56,7 @@ class MyModel():
     def _mynorm_layer(self, type=None, name=None):
         if not isinstance(type, str):
             out = tf.keras.activations.linear
-        elif type.lower() == 'None':
+        elif type.lower() == 'none':
             out = tf.keras.activations.linear
         else:
             out = tf.keras.layers.BatchNormalization(name=name)
