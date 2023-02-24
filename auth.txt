@@ -1,0 +1,11 @@
+ ① 메일에 첨부된 McAfee_Certificate.crt 인증서를 서버로 복사 (Samba, SCP,... 등 이용)
+
+          ② 인증서를 /usr/share/ca-certificates 로 복사 : $ sudo cp McAfee_Certificate.crt /usr/share/ca-certificates
+
+          ③ update-ca-certificates 혹은 dpkg-reconfigure ca-certificates 실행: $ dpkg-reconfigure ca-certificates
+
+          ④ YES 선택
+
+          ⑤ 인증서 목록 중 [McAfee_Certificate.crt]를 골라서 SPACE로 선택, Tab 으로 OK 버튼으로 이동 후 enter
+
+          ⑥ cat /etc/ca-certificates.conf 에 McAfee 추가되었는지 확인
